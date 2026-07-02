@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { useMatches } from "@/hooks/useMatches";
+import { useSession } from "@/hooks/useSession";
 import { computeStats } from "@/lib/stats";
 import type { MatchResult, Playlist } from "@/lib/types";
 import { PlaylistTabs } from "@/components/PlaylistTabs";
+import { SessionBar } from "@/components/SessionBar";
 import { RecordControls } from "@/components/RecordControls";
 import { StatsPanel } from "@/components/StatsPanel";
 import { MmrChart } from "@/components/MmrChart";
@@ -14,6 +16,11 @@ import { DataControls } from "@/components/DataControls";
 export default function Home() {
   const { matches, loaded, addMatch, deleteMatch, clearAll, importMatches } =
     useMatches();
+  const {
+    sessionStart,
+    loaded: sessionLoaded,
+    startNewSession,
+  } = useSession();
   const [activePlaylist, setActivePlaylist] = useState<Playlist>("2v2");
 
   const counts = useMemo(() => {
@@ -24,13 +31,20 @@ export default function Home() {
     return base;
   }, [matches]);
 
+  // Complete history for the active playlist — powers the chart and list.
   const playlistMatches = useMemo(
     () => matches.filter((m) => m.playlist === activePlaylist),
     [matches, activePlaylist],
   );
-  const stats = useMemo(
-    () => computeStats(playlistMatches),
-    [playlistMatches],
+
+  // Session-scoped subset — powers the resettable stats panel.
+  const sessionMatches = useMemo(
+    () => playlistMatches.filter((m) => m.timestamp >= sessionStart),
+    [playlistMatches, sessionStart],
+  );
+  const sessionStats = useMemo(
+    () => computeStats(sessionMatches),
+    [sessionMatches],
   );
 
   function handleRecord(result: MatchResult, mmr: number | null) {
@@ -77,9 +91,14 @@ export default function Home() {
       <RecordControls onRecord={handleRecord} />
 
       {/* Hooks stay stable across renders; just gate the data-derived views. */}
-      {loaded ? (
+      {loaded && sessionLoaded ? (
         <>
-          <StatsPanel stats={stats} />
+          <SessionBar
+            sessionStart={sessionStart}
+            sessionMatchCount={sessionMatches.length}
+            onNewSession={startNewSession}
+          />
+          <StatsPanel stats={sessionStats} />
           <MmrChart matches={playlistMatches} />
           <MatchHistory matches={playlistMatches} onDelete={deleteMatch} />
           <DataControls matches={matches} onImport={importMatches} />
