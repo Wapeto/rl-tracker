@@ -1,4 +1,5 @@
-import type { Match, MatchResult } from "./types";
+import type { Match, MatchResult, Playlist } from "./types";
+import { DEFAULT_PLAYLIST, PLAYLISTS } from "./types";
 
 /**
  * Versioned storage key. Bumping the version is a deliberate migration step —
@@ -12,17 +13,35 @@ function isMatchResult(value: unknown): value is MatchResult {
   return value === "win" || value === "loss";
 }
 
-function isMatch(value: unknown): value is Match {
+function isPlaylist(value: unknown): value is Playlist {
+  return PLAYLISTS.includes(value as Playlist);
+}
+
+/**
+ * Validates a raw value and returns a clean Match, or null if unusable.
+ * Legacy records saved before playlists existed have no `playlist` field; those
+ * are migrated to DEFAULT_PLAYLIST rather than discarded so no history is lost.
+ */
+function toMatch(value: unknown): Match | null {
   if (typeof value !== "object" || value === null) {
-    return false;
+    return null;
   }
-  const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.id === "string" &&
-    isMatchResult(candidate.result) &&
-    (candidate.mmr === null || typeof candidate.mmr === "number") &&
-    typeof candidate.timestamp === "number"
-  );
+  const c = value as Record<string, unknown>;
+  if (
+    typeof c.id !== "string" ||
+    !isMatchResult(c.result) ||
+    !(c.mmr === null || typeof c.mmr === "number") ||
+    typeof c.timestamp !== "number"
+  ) {
+    return null;
+  }
+  return {
+    id: c.id,
+    playlist: isPlaylist(c.playlist) ? c.playlist : DEFAULT_PLAYLIST,
+    result: c.result,
+    mmr: c.mmr,
+    timestamp: c.timestamp,
+  };
 }
 
 /** Reads and validates the stored matches. Returns [] when absent or corrupt. */
@@ -39,7 +58,9 @@ export function loadMatches(): Match[] {
     if (!Array.isArray(parsed)) {
       return [];
     }
-    return parsed.filter(isMatch);
+    return parsed
+      .map(toMatch)
+      .filter((m): m is Match => m !== null);
   } catch {
     // Corrupt data should never crash the app — start clean instead.
     return [];

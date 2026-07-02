@@ -1,21 +1,48 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useMatches } from "@/hooks/useMatches";
 import { computeStats } from "@/lib/stats";
+import type { MatchResult, Playlist } from "@/lib/types";
+import { PlaylistTabs } from "@/components/PlaylistTabs";
 import { RecordControls } from "@/components/RecordControls";
 import { StatsPanel } from "@/components/StatsPanel";
 import { MmrChart } from "@/components/MmrChart";
 import { MatchHistory } from "@/components/MatchHistory";
+import { DataControls } from "@/components/DataControls";
 
 export default function Home() {
-  const { matches, loaded, addMatch, deleteMatch, clearAll } = useMatches();
-  const stats = useMemo(() => computeStats(matches), [matches]);
+  const { matches, loaded, addMatch, deleteMatch, clearAll, importMatches } =
+    useMatches();
+  const [activePlaylist, setActivePlaylist] = useState<Playlist>("2v2");
+
+  const counts = useMemo(() => {
+    const base: Record<Playlist, number> = { "1v1": 0, "2v2": 0, "3v3": 0 };
+    for (const match of matches) {
+      base[match.playlist] += 1;
+    }
+    return base;
+  }, [matches]);
+
+  const playlistMatches = useMemo(
+    () => matches.filter((m) => m.playlist === activePlaylist),
+    [matches, activePlaylist],
+  );
+  const stats = useMemo(
+    () => computeStats(playlistMatches),
+    [playlistMatches],
+  );
+
+  function handleRecord(result: MatchResult, mmr: number | null) {
+    addMatch(result, mmr, activePlaylist);
+  }
 
   function handleClearAll() {
     if (
       typeof window !== "undefined" &&
-      window.confirm("Delete all recorded matches? This cannot be undone.")
+      window.confirm(
+        "Delete ALL recorded matches across every playlist? This cannot be undone.",
+      )
     ) {
       clearAll();
     }
@@ -27,7 +54,7 @@ export default function Home() {
         <div>
           <h1 className="text-2xl font-bold text-white">RL Tracker</h1>
           <p className="text-sm text-slate-400">
-            Win streaks &amp; MMR, saved on this device.
+            Win streaks &amp; MMR per playlist, saved on this device.
           </p>
         </div>
         {matches.length > 0 && (
@@ -41,14 +68,21 @@ export default function Home() {
         )}
       </header>
 
-      <RecordControls onRecord={addMatch} />
+      <PlaylistTabs
+        active={activePlaylist}
+        counts={counts}
+        onChange={setActivePlaylist}
+      />
+
+      <RecordControls onRecord={handleRecord} />
 
       {/* Hooks stay stable across renders; just gate the data-derived views. */}
       {loaded ? (
         <>
           <StatsPanel stats={stats} />
-          <MmrChart matches={matches} />
-          <MatchHistory matches={matches} onDelete={deleteMatch} />
+          <MmrChart matches={playlistMatches} />
+          <MatchHistory matches={playlistMatches} onDelete={deleteMatch} />
+          <DataControls matches={matches} onImport={importMatches} />
         </>
       ) : (
         <p className="text-sm text-slate-500">Loading your history…</p>

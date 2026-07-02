@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { loadMatches, saveMatches } from "@/lib/storage";
-import type { Match, MatchResult } from "@/lib/types";
+import type { Match, MatchResult, Playlist } from "@/lib/types";
 
 interface UseMatchesResult {
   matches: Match[];
   /** False until the first client-side load completes (avoids SSR flash). */
   loaded: boolean;
-  addMatch: (result: MatchResult, mmr: number | null) => void;
+  addMatch: (result: MatchResult, mmr: number | null, playlist: Playlist) => void;
   deleteMatch: (id: string) => void;
   clearAll: () => void;
+  /** Merges imported matches into the current set, deduped by id. */
+  importMatches: (incoming: readonly Match[]) => void;
 }
 
 function newId(): string {
@@ -40,15 +42,19 @@ export function useMatches(): UseMatchesResult {
     }
   }, [matches, loaded]);
 
-  const addMatch = useCallback((result: MatchResult, mmr: number | null) => {
-    const match: Match = {
-      id: newId(),
-      result,
-      mmr,
-      timestamp: Date.now(),
-    };
-    setMatches((prev) => [...prev, match]);
-  }, []);
+  const addMatch = useCallback(
+    (result: MatchResult, mmr: number | null, playlist: Playlist) => {
+      const match: Match = {
+        id: newId(),
+        playlist,
+        result,
+        mmr,
+        timestamp: Date.now(),
+      };
+      setMatches((prev) => [...prev, match]);
+    },
+    [],
+  );
 
   const deleteMatch = useCallback((id: string) => {
     setMatches((prev) => prev.filter((m) => m.id !== id));
@@ -58,5 +64,22 @@ export function useMatches(): UseMatchesResult {
     setMatches([]);
   }, []);
 
-  return { matches, loaded, addMatch, deleteMatch, clearAll };
+  const importMatches = useCallback((incoming: readonly Match[]) => {
+    setMatches((prev) => {
+      const byId = new Map(prev.map((m) => [m.id, m]));
+      for (const match of incoming) {
+        byId.set(match.id, match);
+      }
+      return [...byId.values()];
+    });
+  }, []);
+
+  return {
+    matches,
+    loaded,
+    addMatch,
+    deleteMatch,
+    clearAll,
+    importMatches,
+  };
 }
