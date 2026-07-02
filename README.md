@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RL Tracker
 
-## Getting Started
+A dead-simple Rocket League win-streak & MMR tracker. No accounts, no backend —
+everything is stored in your browser's **localStorage**, so your history stays on
+your device and survives page reloads and app redeploys.
 
-First, run the development server:
+## Features
+
+- **Win / Loss buttons** with an optional MMR entry per match
+- **Stats**: current streak, wins, losses, win rate, best win streak, net MMR change
+- **MMR chart** — a lightweight SVG line chart of your MMR over time
+- **Match history** with per-match delete and a full reset
+- Data persists across reloads and deploys (localStorage key `rl-tracker:matches:v1`)
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js (App Router) + TypeScript + Tailwind CSS
+- 100% client-side persistence — no database, no login
 
-## Learn More
+## Deploying to Vercel
 
-To learn more about Next.js, take a look at the following resources:
+Push this folder to a Git repo and import it in Vercel (framework preset: Next.js).
+Because all data lives in each visitor's browser, **new deploys never wipe user
+data** — the storage key is versioned and only changes on a deliberate migration.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How persistence works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/lib/storage.ts` reads/writes/validates the match list under a stable,
+  versioned key. Corrupt data falls back to an empty list instead of crashing.
+- `src/hooks/useMatches.ts` loads once on mount and mirrors every change back to
+  localStorage. It only starts writing *after* the initial load, so an empty
+  first render can never overwrite existing history.
