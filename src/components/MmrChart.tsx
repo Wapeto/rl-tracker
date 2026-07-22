@@ -11,8 +11,8 @@ interface MmrChartProps {
 }
 
 const WIDTH = 760;
-const HEIGHT = 300;
-const PAD = { top: 18, right: 54, bottom: 34, left: 96 };
+const HEIGHT = 460;
+const PAD = { top: 20, right: 56, bottom: 38, left: 100 };
 const INNER_W = WIDTH - PAD.left - PAD.right;
 const INNER_H = HEIGHT - PAD.top - PAD.bottom;
 
@@ -251,7 +251,7 @@ export function MmrChart({ matches, playlist }: MmrChartProps) {
                 y={(b.yTop + b.yBottom) / 2}
                 textAnchor="end"
                 dominantBaseline="middle"
-                className="text-[11px] font-medium"
+                className="text-[13px] font-semibold"
                 fill={b.color}
               >
                 {b.label}
@@ -272,8 +272,8 @@ export function MmrChart({ matches, playlist }: MmrChartProps) {
                     y={b.boundaryY}
                     textAnchor="start"
                     dominantBaseline="middle"
-                    className="tnum text-[9px]"
-                    fill="#64748b"
+                    className="tnum text-[11px]"
+                    fill="#7c8aa0"
                   >
                     {b.boundary}
                   </text>
@@ -287,10 +287,10 @@ export function MmrChart({ matches, playlist }: MmrChartProps) {
             <text
               key={i}
               x={t.x}
-              y={HEIGHT - 12}
+              y={HEIGHT - 14}
               textAnchor="middle"
-              className="text-[10px]"
-              fill="#64748b"
+              className="text-[12px]"
+              fill="#7c8aa0"
             >
               {t.label}
             </text>
@@ -302,7 +302,7 @@ export function MmrChart({ matches, playlist }: MmrChartProps) {
             d={geo.linePath}
             fill="none"
             stroke="#38bdf8"
-            strokeWidth={2.25}
+            strokeWidth={2.5}
             strokeLinejoin="round"
             strokeLinecap="round"
           />
@@ -330,10 +330,10 @@ export function MmrChart({ matches, playlist }: MmrChartProps) {
                   key={i}
                   cx={p.x}
                   cy={p.y}
-                  r={isActive ? 5 : 3.5}
+                  r={isActive ? 6 : 4.5}
                   fill="#0b1220"
                   stroke={color}
-                  strokeWidth={1.5}
+                  strokeWidth={1.75}
                   strokeDasharray="2 1.6"
                   opacity={0.9}
                 />
@@ -344,10 +344,10 @@ export function MmrChart({ matches, playlist }: MmrChartProps) {
                 key={i}
                 cx={p.x}
                 cy={p.y}
-                r={isActive ? 5.5 : 3.5}
+                r={isActive ? 7 : 4.5}
                 fill={color}
                 stroke={isActive ? "#fff" : "transparent"}
-                strokeWidth={isActive ? 1.5 : 0}
+                strokeWidth={isActive ? 2 : 0}
               />
             );
           })}
