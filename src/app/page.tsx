@@ -135,7 +135,11 @@ export default function Home() {
             onNewSession={startNewSession}
           />
           <StatsPanel stats={sessionStats} />
-          <MmrChart matches={playlistMatches} playlist={activePlaylist} />
+          <MmrChart
+            matches={playlistMatches}
+            playlist={activePlaylist}
+            sessionStart={sessionStart}
+          />
           <MatchHistory
             matches={playlistMatches}
             playlist={activePlaylist}
