@@ -63,19 +63,37 @@ export default function Home() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-8 sm:py-12">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">RL Tracker</h1>
-          <p className="text-sm text-slate-400">
-            Win streaks &amp; MMR per playlist, saved on this device.
-          </p>
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-8 sm:py-12">
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span
+            aria-hidden
+            className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-lg shadow-sky-500/25 ring-1 ring-inset ring-white/25"
+          >
+            <svg viewBox="0 0 24 24" className="h-6 w-6 text-white" fill="none">
+              <path
+                d="M13 3 5 13h5l-1 8 8-10h-5l1-8Z"
+                fill="currentColor"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-white">
+              RL Tracker
+            </h1>
+            <p className="text-sm text-slate-400">
+              Win streaks &amp; rank per playlist, on this device.
+            </p>
+          </div>
         </div>
         {matches.length > 0 && (
           <button
             type="button"
             onClick={handleClearAll}
-            className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-slate-400 transition hover:border-rose-400/50 hover:text-rose-300"
+            className="shrink-0 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-rose-400/50 hover:bg-rose-500/5 hover:text-rose-300"
           >
             Reset
           </button>
@@ -100,7 +118,11 @@ export default function Home() {
           />
           <StatsPanel stats={sessionStats} />
           <MmrChart matches={playlistMatches} playlist={activePlaylist} />
-          <MatchHistory matches={playlistMatches} onDelete={deleteMatch} />
+          <MatchHistory
+            matches={playlistMatches}
+            playlist={activePlaylist}
+            onDelete={deleteMatch}
+          />
           <DataControls matches={matches} onImport={importMatches} />
         </>
       ) : (

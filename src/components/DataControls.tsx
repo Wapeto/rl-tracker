@@ -57,8 +57,8 @@ export function DataControls({ matches, onImport }: DataControlsProps) {
   }
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-6">
-      <div className="flex items-center justify-between gap-2">
+    <section className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-200">Backup</h2>
           <p className="text-xs text-slate-500">
@@ -69,14 +69,14 @@ export function DataControls({ matches, onImport }: DataControlsProps) {
           <button
             type="button"
             onClick={handleExport}
-            className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-400/60 hover:text-sky-300"
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-400/60 hover:bg-sky-500/10 hover:text-sky-200"
           >
             Export CSV
           </button>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="rounded-lg border border-white/10 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-emerald-400/60 hover:text-emerald-300"
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-emerald-400/60 hover:bg-emerald-500/10 hover:text-emerald-300"
           >
             Import CSV
           </button>

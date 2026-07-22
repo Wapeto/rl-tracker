@@ -12,11 +12,11 @@ const accentClasses: Record<NonNullable<StatCardProps["accent"]>, string> = {
 
 export function StatCard({ label, value, accent = "default" }: StatCardProps) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-400">
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/[0.16] hover:bg-white/[0.05]">
+      <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
         {label}
       </div>
-      <div className={`mt-1 text-2xl font-bold ${accentClasses[accent]}`}>
+      <div className={`tnum mt-1 text-2xl font-bold ${accentClasses[accent]}`}>
         {value}
       </div>
     </div>

@@ -11,7 +11,7 @@ interface PlaylistTabsProps {
 
 export function PlaylistTabs({ active, counts, onChange }: PlaylistTabsProps) {
   return (
-    <div className="grid grid-cols-3 gap-2 rounded-xl border border-white/10 bg-white/5 p-1.5">
+    <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-1.5">
       {PLAYLISTS.map((playlist) => {
         const isActive = playlist === active;
         return (
@@ -22,14 +22,14 @@ export function PlaylistTabs({ active, counts, onChange }: PlaylistTabsProps) {
             aria-pressed={isActive}
             className={`flex flex-col items-center rounded-lg px-3 py-2 text-sm font-semibold transition ${
               isActive
-                ? "bg-sky-500 text-sky-950"
+                ? "bg-gradient-to-br from-sky-400 to-sky-600 text-white shadow-md shadow-sky-500/25 ring-1 ring-inset ring-white/20"
                 : "text-slate-300 hover:bg-white/5"
             }`}
           >
             {playlist}
             <span
-              className={`text-[11px] font-normal ${
-                isActive ? "text-sky-900" : "text-slate-500"
+              className={`tnum text-[11px] font-normal ${
+                isActive ? "text-white/80" : "text-slate-500"
               }`}
             >
               {counts[playlist]} {counts[playlist] === 1 ? "match" : "matches"}
