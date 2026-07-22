@@ -5,9 +5,11 @@ import { useMatches } from "@/hooks/useMatches";
 import { useSession } from "@/hooks/useSession";
 import { computeStats } from "@/lib/stats";
 import type { MatchResult, Playlist } from "@/lib/types";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { PlaylistTabs } from "@/components/PlaylistTabs";
 import { SessionBar } from "@/components/SessionBar";
 import { RecordControls } from "@/components/RecordControls";
+import { RlLogSync } from "@/components/RlLogSync";
 import { StatsPanel } from "@/components/StatsPanel";
 import { MmrChart } from "@/components/MmrChart";
 import { MatchHistory } from "@/components/MatchHistory";
@@ -22,6 +24,7 @@ export default function Home() {
     startNewSession,
   } = useSession();
   const [activePlaylist, setActivePlaylist] = useState<Playlist>("2v2");
+  const isDesktop = useIsDesktop();
 
   const counts = useMemo(() => {
     const base: Record<Playlist, number> = { "1v1": 0, "2v2": 0, "3v3": 0 };
@@ -125,6 +128,8 @@ export default function Home() {
       />
 
       <RecordControls onRecord={handleRecord} />
+
+      {isDesktop && <RlLogSync matches={matches} onImport={importMatches} />}
 
       {/* Hooks stay stable across renders; just gate the data-derived views. */}
       {loaded && sessionLoaded ? (
