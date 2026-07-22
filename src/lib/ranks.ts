@@ -7,11 +7,14 @@ import type { Playlist } from "./types";
  * tier is split into four divisions (Div I–IV). This module maps a raw MMR
  * value to its in-game rank, tier and division for a given playlist.
  *
- * IMPORTANT: Psyonix does not publish exact MMR boundaries, and they drift a
- * little between seasons. The tables below are community-baseline lower bounds
- * for a representative recent season — accurate to within a division or so,
- * which is all a personal tracker needs. 1v1 sits lowest, 3v3 highest, with
- * 2v2 in the middle, matching how the real playlists relate.
+ * THRESHOLDS: The 3v3 Standard boundaries below are the real per-tier MMR
+ * thresholds published by strafe.com (2026 season):
+ * https://www.strafe.com/news/read/rocket-league-ranks-explained/
+ *
+ * Psyonix does not publish 1v1 or 2v2 tables, so those are derived from the
+ * Standard values with the community-documented offsets (2v2 sits ~30 MMR
+ * below 3v3 for the same tier, 1v1 ~105 below). Swap in exact numbers here if
+ * an authoritative per-tier 1v1/2v2 table becomes available.
  */
 
 export type RankName =
@@ -80,22 +83,34 @@ const TIERS: readonly TierDef[] = [
 const ROMAN = ["", "I", "II", "III", "IV"] as const;
 
 /**
- * Per-playlist lower-bound MMR for each of the 22 tiers (same order as TIERS).
- * The last value is the Supersonic Legend floor; there is no upper bound.
+ * Real 3v3 Standard lower-bound MMR for each of the 22 tiers (same order as
+ * TIERS), from strafe.com's 2026 table. Bronze I is floored at 0. The last
+ * value is the Supersonic Legend floor; there is no upper bound.
  */
+const STANDARD_LOWERS: readonly number[] = [
+  0, 175, 229, 295, 355, 415, 475, 535, 595, 655, 715, 775, 835, 915, 995,
+  1075, 1195, 1315, 1435, 1575, 1704, 1875,
+];
+
+/**
+ * Derives a playlist's tier lower-bounds by shifting the Standard table down by
+ * a flat offset, floored at 0 and kept strictly increasing.
+ */
+function deriveLowers(offset: number): number[] {
+  let prev = -1;
+  return STANDARD_LOWERS.map((value) => {
+    const shifted = Math.max(0, value - offset);
+    const lower = shifted <= prev ? prev + 1 : shifted;
+    prev = lower;
+    return lower;
+  });
+}
+
+/** Per-playlist lower-bound MMR for each of the 22 tiers. */
 const THRESHOLDS: Record<Playlist, readonly number[]> = {
-  "1v1": [
-    0, 100, 135, 175, 215, 255, 295, 335, 375, 415, 455, 495, 535, 595, 655,
-    715, 795, 875, 955, 1035, 1115, 1195,
-  ],
-  "2v2": [
-    0, 145, 175, 215, 245, 275, 315, 345, 375, 415, 445, 475, 515, 575, 635,
-    695, 775, 855, 935, 1035, 1135, 1235,
-  ],
-  "3v3": [
-    0, 150, 185, 225, 255, 285, 325, 355, 385, 425, 455, 485, 525, 585, 645,
-    705, 785, 865, 945, 1075, 1205, 1335,
-  ],
+  "1v1": deriveLowers(105),
+  "2v2": deriveLowers(30),
+  "3v3": STANDARD_LOWERS,
 };
 
 const SSL_INDEX = TIERS.length - 1;
