@@ -132,27 +132,97 @@ export function parseRlLog(text: string): Match[] {
   return matchesFromSamples(parseLogSamples(text));
 }
 
-/** Matches within this window (same playlist) are treated as the same game. */
-const DEDUPE_WINDOW_MS = 4 * 60 * 1000;
+/** True for matches created by the log importer (id `rl-<playlist>-<ts>`). */
+function isLogDerived(match: Match): boolean {
+  return match.id.startsWith("rl-");
+}
+
+/**
+ * A game always shifts your MMR, so two matches in the same playlist with the
+ * same MMR and nothing differently-valued between them are the same game.
+ * Returns true when `a` and `b` are such a same-MMR pair, given the full pool
+ * of matches to check for a separating value.
+ */
+function isSameMmrDuplicate(
+  a: Match,
+  b: Match,
+  pool: readonly Match[],
+): boolean {
+  if (a.playlist !== b.playlist || a.mmr === null || a.mmr !== b.mmr) {
+    return false;
+  }
+  const lo = Math.min(a.timestamp, b.timestamp);
+  const hi = Math.max(a.timestamp, b.timestamp);
+  if (lo === hi) {
+    return true;
+  }
+  const separated = pool.some(
+    (m) =>
+      m.playlist === a.playlist &&
+      m.mmr !== null &&
+      m.mmr !== a.mmr &&
+      m.timestamp > lo &&
+      m.timestamp < hi,
+  );
+  return !separated;
+}
 
 /**
  * Filters parsed log matches down to ones not already tracked — by id (so
- * re-syncing the same log is idempotent) and by a time window (so a game
- * already entered by hand isn't duplicated by the log importer).
+ * re-syncing the same log is idempotent) and by MMR (so a game already entered
+ * by hand isn't duplicated by the log importer, however late its MMR was
+ * typed). Timing is not used, since a manual entry can lag the match by minutes.
  */
 export function selectNewMatches(
   parsed: readonly Match[],
   existing: readonly Match[],
 ): Match[] {
   const existingIds = new Set(existing.map((m) => m.id));
+  const pool = [...existing, ...parsed];
   return parsed.filter((pm) => {
     if (existingIds.has(pm.id)) {
       return false;
     }
-    return !existing.some(
-      (m) =>
-        m.playlist === pm.playlist &&
-        Math.abs(m.timestamp - pm.timestamp) < DEDUPE_WINDOW_MS,
-    );
+    return !existing.some((e) => isSameMmrDuplicate(pm, e, pool));
   });
+}
+
+/**
+ * Enforces the "MMR always changes" invariant across the whole set: removes a
+ * log-derived match when it sits next to another same-MMR match in its playlist
+ * (with nothing different between). Only log-derived matches are dropped, so
+ * hand-entered data is never silently deleted. Cleans up duplicates that slipped
+ * in before dedupe existed, and is idempotent.
+ */
+export function normalizeMatches(matches: readonly Match[]): Match[] {
+  const byPlaylist = new Map<Playlist, Match[]>();
+  for (const m of matches) {
+    const list = byPlaylist.get(m.playlist);
+    if (list) {
+      list.push(m);
+    } else {
+      byPlaylist.set(m.playlist, [m]);
+    }
+  }
+
+  const drop = new Set<string>();
+  for (const list of byPlaylist.values()) {
+    const sorted = [...list].sort((a, b) => a.timestamp - b.timestamp);
+    let lastKept: Match | null = null;
+    for (const m of sorted) {
+      if (lastKept && m.mmr !== null && lastKept.mmr === m.mmr) {
+        if (isLogDerived(m)) {
+          drop.add(m.id);
+          continue; // keep lastKept
+        }
+        if (isLogDerived(lastKept)) {
+          drop.add(lastKept.id);
+        }
+        // If neither is log-derived, keep both (don't touch manual data).
+      }
+      lastKept = m;
+    }
+  }
+
+  return drop.size > 0 ? matches.filter((m) => !drop.has(m.id)) : [...matches];
 }

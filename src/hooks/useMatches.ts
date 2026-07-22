@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { loadMatches, saveMatches } from "@/lib/storage";
+import { normalizeMatches } from "@/lib/rllog";
 import type { Match, MatchResult, Playlist } from "@/lib/types";
 
 interface UseMatchesResult {
@@ -32,7 +33,9 @@ export function useMatches(): UseMatchesResult {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setMatches(loadMatches());
+    // Normalize on load so any duplicates stored before dedupe existed are
+    // cleaned up (and re-persisted on the next change).
+    setMatches(normalizeMatches(loadMatches()));
     setLoaded(true);
   }, []);
 
@@ -70,7 +73,7 @@ export function useMatches(): UseMatchesResult {
       for (const match of incoming) {
         byId.set(match.id, match);
       }
-      return [...byId.values()];
+      return normalizeMatches([...byId.values()]);
     });
   }, []);
 
