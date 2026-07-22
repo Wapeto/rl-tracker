@@ -42,9 +42,27 @@ export default function Home() {
     () => playlistMatches.filter((m) => m.timestamp >= sessionStart),
     [playlistMatches, sessionStart],
   );
+
+  // MMR carried into this session: the last recorded MMR from before it began,
+  // so "MMR change" measures the climb since the previous session ended.
+  const sessionBaselineMmr = useMemo(() => {
+    if (sessionStart <= 0) {
+      return null;
+    }
+    let baseline: number | null = null;
+    let latestTs = -Infinity;
+    for (const m of playlistMatches) {
+      if (m.timestamp < sessionStart && m.mmr !== null && m.timestamp > latestTs) {
+        latestTs = m.timestamp;
+        baseline = m.mmr;
+      }
+    }
+    return baseline;
+  }, [playlistMatches, sessionStart]);
+
   const sessionStats = useMemo(
-    () => computeStats(sessionMatches),
-    [sessionMatches],
+    () => computeStats(sessionMatches, sessionBaselineMmr),
+    [sessionMatches, sessionBaselineMmr],
   );
 
   function handleRecord(result: MatchResult, mmr: number | null) {

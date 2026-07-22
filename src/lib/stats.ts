@@ -54,7 +54,20 @@ function longestStreakOf(
   return longest;
 }
 
-export function computeStats(matches: readonly Match[]): Stats {
+/**
+ * Computes stats for a set of matches.
+ *
+ * `baselineMmr` is the MMR the player carried into this set — typically the
+ * last recorded MMR from before the session started. When provided, the MMR
+ * change measures from that baseline to the latest MMR, so a session's delta
+ * reflects the climb since the previous session ended rather than only the
+ * movement within the session. When omitted, the delta falls back to the
+ * first-to-last MMR inside the set (used for the all-time view).
+ */
+export function computeStats(
+  matches: readonly Match[],
+  baselineMmr: number | null = null,
+): Stats {
   const ordered = sortByTime(matches);
   const wins = ordered.filter((m) => m.result === "win").length;
   const losses = ordered.length - wins;
@@ -65,9 +78,13 @@ export function computeStats(matches: readonly Match[]): Stats {
   const latestMmr =
     withMmr.length > 0 ? withMmr[withMmr.length - 1].mmr : null;
   const mmrDelta =
-    withMmr.length >= 2
-      ? withMmr[withMmr.length - 1].mmr - withMmr[0].mmr
-      : null;
+    baselineMmr !== null
+      ? latestMmr !== null
+        ? latestMmr - baselineMmr
+        : null
+      : withMmr.length >= 2
+        ? withMmr[withMmr.length - 1].mmr - withMmr[0].mmr
+        : null;
 
   return {
     total: ordered.length,
