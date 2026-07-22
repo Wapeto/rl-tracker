@@ -99,7 +99,7 @@ export default function Home() {
             onNewSession={startNewSession}
           />
           <StatsPanel stats={sessionStats} />
-          <MmrChart matches={playlistMatches} />
+          <MmrChart matches={playlistMatches} playlist={activePlaylist} />
           <MatchHistory matches={playlistMatches} onDelete={deleteMatch} />
           <DataControls matches={matches} onImport={importMatches} />
         </>

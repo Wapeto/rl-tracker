@@ -3,8 +3,68 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Brand accent — RL "boost" electric blue → cyan */
+  --color-boost-400: #38bdf8;
+  --color-boost-500: #0ea5e9;
+  --color-boost-600: #0284c7;
+}
+
+:root {
+  /* Layered surface system for the dark "ranked HUD" shell */
+  --bg-base: #05070d;
+  --surface-1: rgba(255, 255, 255, 0.028);
+  --surface-2: rgba(255, 255, 255, 0.05);
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-strong: rgba(255, 255, 255, 0.14);
 }
 
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background-color: var(--bg-base);
+  /* Arena lighting: soft cool glow up top, faint violet spill below. */
+  background-image:
+    radial-gradient(90rem 44rem at 50% -12%, rgba(14, 165, 233, 0.16), transparent 60%),
+    radial-gradient(60rem 40rem at 88% 8%, rgba(139, 92, 246, 0.1), transparent 55%),
+    radial-gradient(50rem 40rem at 4% 18%, rgba(16, 185, 129, 0.06), transparent 55%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Consistent, visible keyboard focus across the app. */
+:focus-visible {
+  outline: 2px solid var(--color-boost-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Numeric readouts should never reflow as digits change. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise {
+    animation: none;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
 }
