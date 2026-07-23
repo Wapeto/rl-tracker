@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Match } from "@/lib/types";
-import { parseRlLog, selectNewMatches } from "@/lib/rllog";
+import type { Match, MatchResult } from "@/lib/types";
+import {
+  parseRlLogData,
+  selectNewMatches,
+  type UnloggedGame,
+} from "@/lib/rllog";
 import {
   supportsFileSystemAccess,
   pickLogFile,
@@ -36,6 +40,7 @@ export function RlLogSync({ matches, onImport }: RlLogSyncProps) {
   const [dragOver, setDragOver] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [syncedTotal, setSyncedTotal] = useState(0);
+  const [unlogged, setUnlogged] = useState<UnloggedGame[]>([]);
 
   const handleRef = useRef<LogFileHandle | null>(null);
   const intervalRef = useRef<number | null>(null);
@@ -51,12 +56,31 @@ export function RlLogSync({ matches, onImport }: RlLogSyncProps) {
 
   const importFromText = useCallback(
     (text: string): number => {
-      const parsed = parseRlLog(text);
+      const { matches: parsed, unlogged: gaps } = parseRlLogData(text);
       const fresh = selectNewMatches(parsed, matchesRef.current);
       if (fresh.length > 0) {
         onImport(fresh);
       }
+      // Surface only the non-leader games not already marked by hand.
+      const known = new Set(matchesRef.current.map((m) => m.id));
+      setUnlogged(gaps.filter((g) => !known.has(g.id)));
       return fresh.length;
+    },
+    [onImport],
+  );
+
+  const recordUnlogged = useCallback(
+    (game: UnloggedGame, result: MatchResult) => {
+      onImport([
+        {
+          id: game.id,
+          playlist: game.playlist,
+          result,
+          mmr: null, // unknown — the estimator fills it from neighbours
+          timestamp: game.timestamp,
+        },
+      ]);
+      setUnlogged((list) => list.filter((g) => g.id !== game.id));
     },
     [onImport],
   );
@@ -340,11 +364,59 @@ export function RlLogSync({ matches, onImport }: RlLogSyncProps) {
         </p>
       )}
 
+      {unlogged.length > 0 && (
+        <div className="rounded-xl border border-amber-400/25 bg-amber-500/[0.07] p-3">
+          <p className="text-xs leading-relaxed text-amber-200/90">
+            {unlogged.length} ranked{" "}
+            {unlogged.length === 1 ? "game" : "games"} played while a friend led
+            the party. Rocket League logs no MMR for those — mark the result and
+            the MMR gets estimated:
+          </p>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {unlogged.map((game) => (
+              <li
+                key={game.id}
+                className="flex items-center justify-between gap-3 rounded-lg bg-slate-950/40 px-3 py-2"
+              >
+                <span className="text-xs text-slate-300">
+                  <span className="font-semibold text-slate-200">
+                    {game.playlist}
+                  </span>
+                  <span className="text-slate-500">
+                    {" · "}
+                    {new Date(game.timestamp).toLocaleTimeString(undefined, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </span>
+                <span className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => recordUnlogged(game, "win")}
+                    className="rounded-md bg-emerald-500/15 px-2.5 py-1 text-[11px] font-bold text-emerald-300 transition hover:bg-emerald-500/25"
+                  >
+                    WIN
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => recordUnlogged(game, "loss")}
+                    className="rounded-md bg-rose-500/15 px-2.5 py-1 text-[11px] font-bold text-rose-300 transition hover:bg-rose-500/25"
+                  >
+                    LOSS
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <p className="text-[11px] leading-relaxed text-slate-600">
-        Reads <span className="font-mono text-slate-500">PartyLeaderMMR</span>{" "}
-        from the log. Exact when you solo-queue or lead the party; as a
-        non-leader the MMR is the leader&apos;s, though your win/loss is still
-        correct.
+        The MMR is always <em className="not-italic text-slate-500">yours</em> —
+        Rocket League only logs it when you solo-queue or lead the party. Games
+        where a friend leads aren&apos;t logged at all, so they show up above to
+        mark by hand.
       </p>
     </section>
   );
